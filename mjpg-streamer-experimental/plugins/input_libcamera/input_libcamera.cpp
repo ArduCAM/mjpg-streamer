@@ -384,7 +384,7 @@ void *worker_thread(void *arg)
     context_settings *settings = (context_settings*)pctx->init_settings;
     int quality = settings->quality;
     LibcameraOutData frameData;
-    int is_snapshot = 0;
+    int is_switch = 0;
 
     /* Save the image initial settings. */
     int width = pctx->videoIn->width, height = pctx->videoIn->height;
@@ -401,10 +401,12 @@ void *worker_thread(void *arg)
     while (!pglobal->stop) {
 
         if (in->snapshot) {
-            /* The image resolution width and height are set to 0, and the maximum resolution will be used. */
-            switch_resolution(in, pctx->videoIn->snapshot_width, pctx->videoIn->snapshot_height, 1);
+            if (width != pctx->videoIn->snapshot_width || height != pctx->videoIn->snapshot_height) {
+                /* The image resolution width and height are set to 0, and the maximum resolution will be used. */
+                switch_resolution(in, pctx->videoIn->snapshot_width, pctx->videoIn->snapshot_height, 1);
+                is_switch = 1;
+            }
             in->snapshot = 0;
-            is_snapshot = 1;
         }
 
         if (!pctx->camera.readFrame(&frameData))
@@ -421,9 +423,9 @@ void *worker_thread(void *arg)
         pthread_mutex_unlock(&in->db);
 
         pctx->camera.returnFrameBuffer(frameData);
-        if (is_snapshot) {
+        if (is_switch) {
             switch_resolution(in, width, height, buffercount);
-            is_snapshot = 0;
+            is_switch = 0;
         }
     }
 
