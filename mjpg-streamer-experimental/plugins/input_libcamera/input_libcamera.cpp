@@ -116,6 +116,7 @@ Return Value: 0 if everything is ok
 int input_init(input_parameter *param, int plugin_no)
 {   
     // char *device = "/dev/video0";
+    char *device_id;
     int width = 640, height = 480, stride, i, device_idx;
     int snapshot_width = 0, snapshot_height = 0;
     
@@ -244,14 +245,15 @@ int input_init(input_parameter *param, int plugin_no)
     } else {
         settings->buffercount = MAX(settings->buffercount, 1);
     }
-    ret = pctx->camera.initCamera(&width, &height, &stride, formats::BGR888, settings->buffercount, 0);
-    char *device_id = pctx->camera.getCameraId();
-    in->name = (char*)malloc((strlen(device_id) + 1) * sizeof(char));
-    sprintf(in->name, device_id);
+    ret = pctx->camera.initCamera();
     if (ret) {
         IPRINT("LibCamera::initCamera() failed\n");
         goto fatal_error;
     }
+    pctx->camera.configureStill(&width, &height, &stride, formats::BGR888, settings->buffercount, 0);
+    device_id = pctx->camera.getCameraId();
+    in->name = (char*)malloc((strlen(device_id) + 1) * sizeof(char));
+    sprintf(in->name, device_id);
 
     if (settings->fps){
         frame_time = 1000000 / settings->fps;
@@ -364,8 +366,9 @@ void switch_resolution(input *in, int width, int height, int buffercount)
     }
     pctx->videoIn->width = width;
     pctx->videoIn->height = height;
-    free(in->buf);
-    in->buf = (uint8_t *)malloc(width * height);
+    // free(in->buf);
+    // in->buf = (uint8_t *)malloc(width * height);
+    in->buf = (uint8_t *)realloc(in->buf, width * height);
     if (in->buf == NULL) {
         IPRINT("error allocating context\n");
         goto fatal_error;

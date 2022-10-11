@@ -2,7 +2,7 @@
 
 using namespace std::placeholders;
 
-int LibCamera::initCamera(int *width, int *height, int *stride, PixelFormat format, int buffercount, int rotation) {
+int LibCamera::initCamera() {
     int ret;
     cm = std::make_unique<CameraManager>();
     ret = cm->start();
@@ -24,16 +24,23 @@ int LibCamera::initCamera(int *width, int *height, int *stride, PixelFormat form
         return 1;
     }
     camera_acquired_ = true;
+    return 0;
+}
 
-    std::unique_ptr<CameraConfiguration> config;
-    config = camera_->generateConfiguration({ StreamRole::StillCapture });
+char * LibCamera::getCameraId(){
+    return cameraId.data();
+}
+
+void LibCamera::configureStill(int *width, int *height, int *stride, PixelFormat format, int buffercount, int rotation) {
+    printf("Configuring still capture...\n");
+    config_ = camera_->generateConfiguration({ StreamRole::StillCapture });
     if (*width && *height) {
         libcamera::Size size(*width, *height);
-        config->at(0).size = size;
+        config_->at(0).size = size;
     }
-    config->at(0).pixelFormat = format;
+    config_->at(0).pixelFormat = format;
     if (buffercount)
-        config->at(0).bufferCount = buffercount;
+        config_->at(0).bufferCount = buffercount;
     Transform transform = Transform::Identity;
     bool ok;
     Transform rot = transformFromRotation(rotation, &ok);
@@ -42,29 +49,19 @@ int LibCamera::initCamera(int *width, int *height, int *stride, PixelFormat form
     transform = rot * transform;
     if (!!(transform & Transform::Transpose))
         throw std::runtime_error("transforms requiring transpose not supported");
-    config->transform = transform;
+    config_->transform = transform;
 
-    switch (config->validate()) {
-        case CameraConfiguration::Valid:
-            break;
+    CameraConfiguration::Status validation = config_->validate();
+	if (validation == CameraConfiguration::Invalid)
+		throw std::runtime_error("failed to valid stream configurations");
+	else if (validation == CameraConfiguration::Adjusted)
+        std::cout << "Stream configuration adjusted" << std::endl;
 
-        case CameraConfiguration::Adjusted:
-            std::cout << "Camera configuration adjusted" << std::endl;
-            break;
+    *width = config_->at(0).size.width;
+    *height = config_->at(0).size.height;
+    *stride = config_->at(0).stride;
 
-        case CameraConfiguration::Invalid:
-            std::cout << "Camera configuration invalid" << std::endl;
-            return 1;
-    }
-    *width = config->at(0).size.width;
-    *height = config->at(0).size.height;
-    *stride = config->at(0).stride;
-    config_ = std::move(config);
-    return 0;
-}
-
-char * LibCamera::getCameraId(){
-    return cameraId.data();
+    printf("Still capture setup complete\n");
 }
 
 int LibCamera::startCamera() {
@@ -181,9 +178,6 @@ void LibCamera::requestComplete(Request *request) {
 }
 
 void LibCamera::processRequest(Request *request) {
-    std::lock_guard<std::mutex> lock(free_requests_mutex_);
-    CompletedRequest payload(request->buffers().begin()->second->metadata().sequence, request->buffers(),
-							 request->metadata());
     requestQueue.push(request);
 }
 
@@ -225,16 +219,14 @@ bool LibCamera::readFrame(LibcameraOutData *frameData){
 }
 
 void LibCamera::set(ControlList controls){
+    std::lock_guard<std::mutex> lock(control_mutex_);
 	this->controls_ = std::move(controls);
 }
 
 int LibCamera::resetCamera(int *width, int *height, int *stride, PixelFormat format, int buffercount, int rotation) {
     stopCamera();
-    closeCamera();
-    int ret = initCamera(width, height, stride, format, buffercount, rotation);
-    if (!ret) 
-        ret = startCamera();
-    return ret;
+    configureStill(width, height, stride, format, buffercount, rotation);
+    return startCamera();
 }
 
 void LibCamera::stopCamera() {
@@ -247,15 +239,18 @@ void LibCamera::stopCamera() {
                 camera_started_ = false;
             }
         }
-        if (camera_started_){
-            if (camera_->stop())
-                throw std::runtime_error("failed to stop camera");
-            camera_started_ = false;
-        }
         camera_->requestCompleted.disconnect(this, &LibCamera::requestComplete);
     }
     while (!requestQueue.empty())
         requestQueue.pop();
+
+    for (auto &iter : mappedBuffers_)
+	{
+        std::pair<void *, unsigned int> pair_ = iter.second;
+		munmap(std::get<0>(pair_), std::get<1>(pair_));
+	}
+
+    mappedBuffers_.clear();
 
     requests_.clear();
 
