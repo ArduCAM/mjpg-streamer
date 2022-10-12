@@ -79,10 +79,10 @@ class LibCamera {
         
         int initCamera();
         
-        void configureStill(int *width, int *height, int *stride, PixelFormat format, int buffercount, int rotation);
+        void configureStill(uint32_t width, uint32_t height, PixelFormat format, int buffercount, int rotation);
         
         int startCamera();
-        int resetCamera(int *width, int *height, int *stride, PixelFormat format, int buffercount, int rotation);
+        int resetCamera(uint32_t width, uint32_t height, PixelFormat format, int buffercount, int rotation);
         bool readFrame(LibcameraOutData *frameData);
         void returnFrameBuffer(LibcameraOutData frameData);
 
@@ -90,7 +90,7 @@ class LibCamera {
         void stopCamera();
         void closeCamera();
 
-        libcamera::Stream *VideoStream(uint32_t *w, uint32_t *h, uint32_t *stride) const;
+        Stream *VideoStream(uint32_t *w, uint32_t *h, uint32_t *stride) const;
         char * getCameraId();
 
     private:

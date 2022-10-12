@@ -117,7 +117,7 @@ int input_init(input_parameter *param, int plugin_no)
 {   
     // char *device = "/dev/video0";
     char *device_id;
-    int width = 640, height = 480, stride, i, device_idx;
+    int width = 640, height = 480, i, device_idx;
     int snapshot_width = 0, snapshot_height = 0;
     
     input * in;
@@ -250,7 +250,7 @@ int input_init(input_parameter *param, int plugin_no)
         IPRINT("LibCamera::initCamera() failed\n");
         goto fatal_error;
     }
-    pctx->camera.configureStill(&width, &height, &stride, formats::BGR888, settings->buffercount, 0);
+    pctx->camera.configureStill(width, height, formats::BGR888, settings->buffercount, 0);
     device_id = pctx->camera.getCameraId();
     in->name = (char*)malloc((strlen(device_id) + 1) * sizeof(char));
     sprintf(in->name, device_id);
@@ -292,7 +292,6 @@ int input_init(input_parameter *param, int plugin_no)
     }
     pctx->videoIn->width = width;
     pctx->videoIn->height = height;
-    pctx->videoIn->stride = stride;
     pctx->videoIn->snapshot_width = snapshot_width;
     pctx->videoIn->snapshot_height = snapshot_height;
     
@@ -356,19 +355,16 @@ Description.: switch image resolution.
 Input Value.: -
 Return Value: -
 ******************************************************************************/
-void switch_resolution(input *in, int width, int height, int buffercount)
+void switch_resolution(input *in, uint32_t width, uint32_t height, uint32_t buffercount)
 {
     context *pctx = (context*)in->context;
-    int ret = pctx->camera.resetCamera(&width, &height, &pctx->videoIn->stride, formats::BGR888, buffercount, 0);
+    int ret = pctx->camera.resetCamera(width, height, formats::BGR888, buffercount, 0);
     if (ret) {
         IPRINT("switch_resolution(): Failed to switch camera resolution.\n");
         goto fatal_error;
     }
-    pctx->videoIn->width = width;
-    pctx->videoIn->height = height;
-    // free(in->buf);
-    // in->buf = (uint8_t *)malloc(width * height);
-    in->buf = (uint8_t *)realloc(in->buf, width * height);
+    pctx->camera.VideoStream(&pctx->videoIn->width, &pctx->videoIn->height, &pctx->videoIn->stride);
+    in->buf = (uint8_t *)realloc(in->buf, pctx->videoIn->width * pctx->videoIn->height);
     if (in->buf == NULL) {
         IPRINT("error allocating context\n");
         goto fatal_error;
@@ -390,8 +386,8 @@ void *worker_thread(void *arg)
     int is_switch = 0;
 
     /* Save the image initial settings. */
-    int width = pctx->videoIn->width, height = pctx->videoIn->height;
-    int buffercount = settings->buffercount;
+    uint32_t width = pctx->videoIn->width, height = pctx->videoIn->height;
+    uint32_t buffercount = settings->buffercount;
 
     /* set cleanup handler to cleanup allocated resources */
     pthread_cleanup_push(worker_cleanup, arg);
@@ -401,6 +397,7 @@ void *worker_thread(void *arg)
     settings = NULL;
 
     pctx->camera.startCamera();
+    pctx->camera.VideoStream(&pctx->videoIn->width, &pctx->videoIn->height, &pctx->videoIn->stride);
     while (!pglobal->stop) {
 
         if (in->snapshot) {
