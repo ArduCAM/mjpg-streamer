@@ -44,7 +44,7 @@ typedef struct {
         br_set, br,
         sa_set, sa,
         gain_set, gain,
-        ex_set, ex;
+        ex_set, ex, rot;
 } context_settings;
 
 typedef struct {
@@ -88,6 +88,7 @@ static void help() {
     " [-sa ].................: Set image saturation (integer)\n"\
     " [-ex ].................: Set exposure (integer)\n"\
     " [-gain ]...............: Set gain (integer)\n"
+    " [-rot ]................: Set image rotation (0-359)\n"
     " ---------------------------------------------------------------\n\n"\
     );
 }
@@ -175,6 +176,7 @@ int input_init(input_parameter *param, int plugin_no)
             {"buffercount", required_argument, 0, 0},   // 14
             {"s", required_argument, 0, 0},             // 15
             {"snapshot", required_argument, 0, 0},      // 16
+            {"rot", required_argument, 0, 0},           // 17
             {0, 0, 0, 0}
         };
     
@@ -231,6 +233,10 @@ int input_init(input_parameter *param, int plugin_no)
         case 16:
             parse_resolution_opt(optarg, &snapshot_width, &snapshot_height);
             break;
+        case 17:
+        //OPTION_INT(18,rot)
+            settings->rot = atoi(optarg);
+            break;
             
         default:
             help();
@@ -250,7 +256,7 @@ int input_init(input_parameter *param, int plugin_no)
         IPRINT("LibCamera::initCamera() failed\n");
         goto fatal_error;
     }
-    pctx->camera.configureStill(&width, &height, &stride, formats::BGR888, settings->buffercount, 0);
+    pctx->camera.configureStill(&width, &height, &stride, formats::BGR888, settings->buffercount, settings->rot);
     device_id = pctx->camera.getCameraId();
     in->name = (char*)malloc((strlen(device_id) + 1) * sizeof(char));
     sprintf(in->name, device_id);

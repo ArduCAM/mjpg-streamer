@@ -33,6 +33,7 @@ Usage
  [-sa ].................: Set image saturation (integer)
  [-ex ].................: Set exposure (integer)
  [-gain ]...............: Set gain (integer)
+ [-rot ]................: Set image rotation (0-359)
  ---------------------------------------------------------------
 ```
 
