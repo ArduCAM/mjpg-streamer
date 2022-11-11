@@ -234,7 +234,6 @@ int input_init(input_parameter *param, int plugin_no)
             parse_resolution_opt(optarg, &snapshot_width, &snapshot_height);
             break;
         case 17:
-        //OPTION_INT(18,rot)
             settings->rot = atoi(optarg);
             break;
             
