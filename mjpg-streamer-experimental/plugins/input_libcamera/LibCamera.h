@@ -40,44 +40,13 @@ typedef struct {
     uint32_t stride;
 } LibcameraOutData;
 
-struct CompletedRequest
-{
-	using BufferMap = libcamera::Request::BufferMap;
-	using ControlList = libcamera::ControlList;
-	CompletedRequest() {}
-	CompletedRequest(unsigned int seq, BufferMap const &b, ControlList const &m)
-		: sequence(seq), buffers(b), metadata(m)
-	{
-	}
-	unsigned int sequence;
-	BufferMap buffers;
-	ControlList metadata;
-	float framerate;
-};
-
 class LibCamera {
-
-    struct QuitPayload
-	{
-	};
-    enum class MsgType
-	{
-		RequestComplete,
-		Quit
-	};
-	typedef std::variant<CompletedRequest, QuitPayload> MsgPayload;
-	struct Msg
-	{
-		Msg(MsgType const &t, MsgPayload const &p) : type(t), payload(p) {}
-		MsgType type;
-		MsgPayload payload;
-	};
 
     public:
         LibCamera(){};
         ~LibCamera(){};
         
-        int initCamera();
+        int initCamera(int cameraIndex);
         
         void configureStill(uint32_t width, uint32_t height, PixelFormat format, int buffercount, int rotation);
         

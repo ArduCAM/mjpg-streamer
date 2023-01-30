@@ -2,7 +2,7 @@
 
 using namespace std::placeholders;
 
-int LibCamera::initCamera() {
+int LibCamera::initCamera(int cameraIndex) {
     int ret;
     cm = std::make_unique<CameraManager>();
     ret = cm->start();
@@ -11,7 +11,7 @@ int LibCamera::initCamera() {
               << ret << std::endl;
         return ret;
     }
-    cameraId = cm->cameras()[0]->id();
+    cameraId = cm->cameras()[cameraIndex]->id();
     camera_ = cm->get(cameraId);
     if (!camera_) {
         std::cerr << "Camera " << cameraId << " not found" << std::endl;
