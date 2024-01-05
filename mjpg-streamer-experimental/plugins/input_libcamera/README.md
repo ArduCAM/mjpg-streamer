@@ -23,7 +23,8 @@ Usage
                           example: 640x480
  [-f | --fps ]..........: frames per second
  [-b | --buffercount ]...: Set the number of request buffers.
- [-q | --quality ] .....: set quality of JPEG encoding
+ [-q | --quality ] .....: set quality of JPEG encoding.
+ [-rot | --rotation]....: Request an image rotation, 0 or 180.
  [-s | --snapshot ] .....: Set the snapshot resolution, if not set will default to the maximum resolution.
  ---------------------------------------------------------------
  Optional parameters (may not be supported by all cameras):
@@ -33,6 +34,9 @@ Usage
  [-sa ].................: Set image saturation (integer)
  [-ex ].................: Set exposure (integer)
  [-gain ]...............: Set gain (integer)
+ [-afmode]..............: Control to set the mode of the AF (autofocus) algorithm.(manual, auto, continuous)
+ [-afrange].............: Set the range of focus distances that is scanned.(normal, macro, full)
+ [-lensposition]........: Set the lens to a particular focus position, expressed as a reciprocal distance (0 moves the lens to infinity), or \"default\" for the hyperfocal distance
  ---------------------------------------------------------------
 ```
 
