@@ -49,7 +49,9 @@ void LibCamera::configureStill(uint32_t width, uint32_t height, PixelFormat form
     transform = rot * transform;
     if (!!(transform & Transform::Transpose))
         throw std::runtime_error("transforms requiring transpose not supported");
-    config_->transform = transform;
+    // config_->transform = transform;
+    config_->orientation = libcamera::Orientation::Rotate0 * transform;
+
 
     CameraConfiguration::Status validation = config_->validate();
 	if (validation == CameraConfiguration::Invalid)
