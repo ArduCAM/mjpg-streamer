@@ -413,10 +413,10 @@ Description.: switch image resolution.
 Input Value.: -
 Return Value: -
 ******************************************************************************/
-void switch_resolution(input *in, uint32_t width, uint32_t height, uint32_t buffercount)
+void switch_resolution(input *in, uint32_t width, uint32_t height, uint32_t buffercount, int rotation)
 {
     context *pctx = (context*)in->context;
-    int ret = pctx->camera.resetCamera(width, height, formats::BGR888, buffercount, 0);
+    int ret = pctx->camera.resetCamera(width, height, formats::BGR888, buffercount, rotation);
     if (ret) {
         IPRINT("switch_resolution(): Failed to switch camera resolution.\n");
         goto fatal_error;
@@ -446,6 +446,7 @@ void *worker_thread(void *arg)
     /* Save the image initial settings. */
     uint32_t width = pctx->videoIn->width, height = pctx->videoIn->height;
     uint32_t buffercount = settings->buffercount;
+    int rotation = settings->rotation;
 
     /* set cleanup handler to cleanup allocated resources */
     pthread_cleanup_push(worker_cleanup, arg);
@@ -461,7 +462,7 @@ void *worker_thread(void *arg)
         if (in->snapshot) {
             if (width != pctx->videoIn->snapshot_width || height != pctx->videoIn->snapshot_height) {
                 /* The image resolution width and height are set to 0, and the maximum resolution will be used. */
-                switch_resolution(in, pctx->videoIn->snapshot_width, pctx->videoIn->snapshot_height, 1);
+                switch_resolution(in, pctx->videoIn->snapshot_width, pctx->videoIn->snapshot_height, 1, rotation);
                 is_switch = 1;
             }
             in->snapshot = 0;
@@ -482,7 +483,7 @@ void *worker_thread(void *arg)
 
         pctx->camera.returnFrameBuffer(frameData);
         if (is_switch) {
-            switch_resolution(in, width, height, buffercount);
+            switch_resolution(in, width, height, buffercount, rotation);
             is_switch = 0;
         }
     }
