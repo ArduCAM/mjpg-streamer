@@ -37,7 +37,9 @@ Usage
  [-gain ]...............: Set gain (integer)
  [-afmode]..............: Control to set the mode of the AF (autofocus) algorithm.(manual, auto, continuous)
  [-afrange].............: Set the range of focus distances that is scanned.(normal, macro, full)
- [-lensposition]........: Set the lens to a particular focus position, expressed as a reciprocal distance (0 moves the lens to infinity), or "default" for the hyperfocal distance ---------------------------------------------------------------
+ [-lensposition]........: Set the lens to a particular focus position, expressed as a reciprocal distance (0 moves the lens to infinity), or "default" for the hyperfocal distance 
+ [-tuningfile]..........: Name of camera tuning file to use, omit this option for libcamera default behaviour
+ ---------------------------------------------------------------
 ```
 
 Example
