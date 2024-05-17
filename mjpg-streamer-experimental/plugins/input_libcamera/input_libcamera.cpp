@@ -50,6 +50,7 @@ typedef struct {
         lensposition_set, lensposition,
         camera_set, camera,
         rotation_set, rotation;
+    char tuningfile[100];
 } context_settings;
 
 typedef struct {
@@ -114,7 +115,8 @@ static void help() {
     " [-gain ]...............: Set gain (integer)\n"
     " [-afmode]..............: Control to set the mode of the AF (autofocus) algorithm.(manual, auto, continuous)\n"
     " [-afrange].............: Set the range of focus distances that is scanned.(normal, macro, full)\n"
-    " [-lensposition]........: Set the lens to a particular focus position, expressed as a reciprocal distance (0 moves the lens to infinity), or \"default\" for the hyperfocal distance"
+    " [-lensposition]........: Set the lens to a particular focus position, expressed as a reciprocal distance (0 moves the lens to infinity), or \"default\" for the hyperfocal distance\n"
+    " [-tuningfile]..........: Name of camera tuning file to use, omit this option for libcamera default behaviour\n"
     " ---------------------------------------------------------------\n\n"\
     );
 }
@@ -127,7 +129,7 @@ static context_settings* init_settings() {
         IPRINT("error allocating context");
         exit(EXIT_FAILURE);
     }
-    
+
     settings->quality = 80;
     return settings;
 }
@@ -207,6 +209,7 @@ int input_init(input_parameter *param, int plugin_no)
             {"lensposition", required_argument, 0, 0},  // 19
             {"camera", required_argument, 0, 0},        // 20
             {"rotation", required_argument, 0, 0},      // 21
+            {"tuningfile", required_argument, 0, 0},    // 22
             {0, 0, 0, 0}
         };
     
@@ -273,6 +276,8 @@ int input_init(input_parameter *param, int plugin_no)
             break;
         OPTION_INT(21, rotation)
             break;
+        OPTION_STRING(22, tuningfile)
+            break;
         default:
             help();
             return 1;
@@ -280,6 +285,9 @@ int input_init(input_parameter *param, int plugin_no)
     }
 
     IPRINT("Desired Resolution: %i x %i\n", width, height);
+    IPRINT("tuning file path: %s\n", settings->tuningfile);
+    if (settings->tuningfile != "")
+        setenv("LIBCAMERA_RPI_TUNING_FILE", settings->tuningfile, 1);
 
     if (!settings->buffercount) {
         settings->buffercount = 4;

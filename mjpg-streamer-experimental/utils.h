@@ -78,6 +78,14 @@ void daemon_mode(void);
     } \
     settings->v##_set = 1;
 
+#define OPTION_STRING(idx, v) \
+    case idx: \
+        DBG("case " #idx); \
+        if (sscanf(optarg, "%s", &settings->v) != 1) { \
+            fprintf(stderr, "Invalid value '%s' for -" #v " (string required)\n", optarg); \
+            exit(EXIT_FAILURE); \
+        }
+
 /* 1 is true, 0 is false */
 #define OPTION_BOOL(idx, v) \
   case idx: \
